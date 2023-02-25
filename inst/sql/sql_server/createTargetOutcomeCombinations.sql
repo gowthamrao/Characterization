@@ -67,6 +67,82 @@ o.cohort_definition_id as outcome_cohort_id,
 'O' as cohort_type
 from (select distinct cohort_definition_id from #outcomes_agg) as o
 
+union
+
+select distinct
+t.cohort_definition_id as target_cohort_id,
+o.cohort_definition_id as outcome_cohort_id,
+'TiOT' as cohort_type
+from
+(select distinct cohort_definition_id from #targets_agg) as t
+CROSS JOIN
+(select distinct cohort_definition_id from #outcomes_agg) as o
+
+union
+
+select distinct
+t.cohort_definition_id as target_cohort_id,
+o.cohort_definition_id as outcome_cohort_id,
+'TiOO' as cohort_type
+from
+(select distinct cohort_definition_id from #targets_agg) as t
+CROSS JOIN
+(select distinct cohort_definition_id from #outcomes_agg) as o
+
+union
+
+select distinct
+t.cohort_definition_id as target_cohort_id,
+o.cohort_definition_id as outcome_cohort_id,
+'OiOT' as cohort_type
+from
+(select distinct cohort_definition_id from #targets_agg) as t
+CROSS JOIN
+(select distinct cohort_definition_id from #outcomes_agg) as o
+
+union
+
+select distinct
+t.cohort_definition_id as target_cohort_id,
+o.cohort_definition_id as outcome_cohort_id,
+'OiOO' as cohort_type
+from
+(select distinct cohort_definition_id from #targets_agg) as t
+CROSS JOIN
+(select distinct cohort_definition_id from #outcomes_agg) as o
+
+union
+
+select distinct
+t.cohort_definition_id as target_cohort_id,
+0 as outcome_cohort_id,
+'Tf' as cohort_type
+from (select distinct cohort_definition_id from #targets_agg) as t
+
+union
+
+select distinct
+0 as target_cohort_id,
+o.cohort_definition_id as outcome_cohort_id,
+'Of' as cohort_type
+from (select distinct cohort_definition_id from #outcomes_agg) as o
+
+union
+
+select distinct
+t.cohort_definition_id as target_cohort_id,
+0 as outcome_cohort_id,
+'Tl' as cohort_type
+from (select distinct cohort_definition_id from #targets_agg) as t
+
+union
+
+select distinct
+0 as target_cohort_id,
+o.cohort_definition_id as outcome_cohort_id,
+'Ol' as cohort_type
+from (select distinct cohort_definition_id from #outcomes_agg) as o
+
 ) temp;
 
 
@@ -110,6 +186,46 @@ on t.cohort_definition_id = two.target_cohort_id
 and t.subject_id = two.subject_id
 and o.cohort_definition_id = two.outcome_cohort_id
 where two.subject_id IS NULL;
+
+-- 3) get all the events where target overlaps outcome
+drop table if exists #target_overlaps_outcome;
+select
+t.subject_id,
+t.cohort_start_date,
+t.cohort_end_date,
+o.cohort_start_date as outcome_start_date,
+o.cohort_end_date as outcome_end_date,
+t.cohort_definition_id as target_cohort_id,
+o.cohort_definition_id as outcome_cohort_id
+into #target_overlaps_outcome
+from #targets_agg t inner join #outcomes_agg o
+on t.subject_id = o.subject_id
+where
+-- target starts before outcome end
+t.cohort_start_date <= o.cohort_end_date
+and
+-- outcome starts after target start
+t.cohort_end_date >= o.cohort_start_date;
+
+-- 4) get all the events where outcome overlaps target
+drop table if exists #outcome_overlaps_target;
+select
+t.subject_id,
+t.cohort_start_date,
+t.cohort_end_date,
+o.cohort_start_date as outcome_start_date,
+o.cohort_end_date as outcome_end_date,
+t.cohort_definition_id as target_cohort_id,
+o.cohort_definition_id as outcome_cohort_id
+into #target_overlaps_outcome
+from #targets_agg t inner join #outcomes_agg o
+on t.subject_id = o.subject_id
+where
+-- outcomes starts before target end
+o.cohort_start_date <= o.cohort_end_date
+and
+-- target starts after outcome start
+o.cohort_end_date >= t.cohort_start_date;
 
 -- Final: select into #agg_cohorts
 
@@ -187,6 +303,110 @@ from #outcomes_agg as o
 INNER JOIN #cohort_details cd
 on cd.outcome_cohort_id = o.cohort_definition_id
 and cd.cohort_type = 'O'
+
+union
+
+select
+t.subject_id,
+min(t.cohort_start_date) cohort_start_date,
+min(t.cohort_end_date) cohort_end_date,
+cd.cohort_definition_id
+from #targets_agg as t
+INNER JOIN #cohort_details cd
+on cd.target_cohort_id = t.cohort_definition_id
+and cd.cohort_type = 'Tf'
+GROUP BY t.subject_id
+
+union
+
+select
+o.subject_id,
+min(o.cohort_start_date) cohort_start_date,
+min(o.cohort_end_date) cohort_end_date,
+cd.cohort_definition_id
+from #outcomes_agg as o
+INNER JOIN #cohort_details cd
+on cd.outcome_cohort_id = o.cohort_definition_id
+and cd.cohort_type = 'Of'
+GROUP BY o.subject_id
+
+union
+
+select
+t.subject_id,
+max(t.cohort_start_date) cohort_start_date,
+max(t.cohort_end_date) cohort_end_date,
+cd.cohort_definition_id
+from #targets_agg as t
+INNER JOIN #cohort_details cd
+on cd.target_cohort_id = t.cohort_definition_id
+and cd.cohort_type = 'Tl'
+GROUP BY t.subject_id
+
+union
+
+select
+o.subject_id,
+max(o.cohort_start_date) cohort_start_date,
+max(o.cohort_end_date) cohort_end_date,
+cd.cohort_definition_id
+from #outcomes_agg as o
+INNER JOIN #cohort_details cd
+on cd.outcome_cohort_id = o.cohort_definition_id
+and cd.cohort_type = 'Ol'
+GROUP BY o.subject_id
 ) temp_ts
+
+union
+
+select
+t.subject_id,
+t.cohort_start_date,
+t.cohort_end_date,
+cd.cohort_definition_id
+from #target_overlaps_outcome t
+INNER JOIN #cohort_details cd
+on cd.target_cohort_id = t.target_cohort_id
+and cd.outcome_cohort_id = t.outcome_cohort_id
+and cd.cohort_type = 'TiOT'
+
+union
+
+select
+t.subject_id,
+t.outcome_start_date,
+t.outcome_end_date,
+cd.cohort_definition_id
+from #target_overlaps_outcome t
+INNER JOIN #cohort_details cd
+on cd.target_cohort_id = t.target_cohort_id
+and cd.outcome_cohort_id = t.outcome_cohort_id
+and cd.cohort_type = 'TiOO'
+
+union
+
+select
+t.subject_id,
+t.cohort_start_date,
+t.cohort_end_date,
+cd.cohort_definition_id
+from #outcome_overlaps_target t
+INNER JOIN #cohort_details cd
+on cd.target_cohort_id = t.target_cohort_id
+and cd.outcome_cohort_id = t.outcome_cohort_id
+and cd.cohort_type = 'OiTT'
+
+union
+
+select
+t.subject_id,
+o.outcome_start_date,
+o.outcome_end_date,
+cd.cohort_definition_id
+from #outcome_overlaps_target t
+INNER JOIN #cohort_details cd
+on cd.target_cohort_id = t.target_cohort_id
+and cd.outcome_cohort_id = t.outcome_cohort_id
+and cd.cohort_type = 'OiTO'
 
 ) temp_ts2;
