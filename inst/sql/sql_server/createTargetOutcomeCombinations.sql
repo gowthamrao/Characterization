@@ -217,7 +217,7 @@ o.cohort_start_date as outcome_start_date,
 o.cohort_end_date as outcome_end_date,
 t.cohort_definition_id as target_cohort_id,
 o.cohort_definition_id as outcome_cohort_id
-into #target_overlaps_outcome
+into #outcome_overlaps_target
 from #targets_agg t inner join #outcomes_agg o
 on t.subject_id = o.subject_id
 where
