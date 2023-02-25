@@ -12,6 +12,8 @@ connectionDetails <-
 cdmSource <- getCdmSource(database = database)
 
 resultsLocation <- file.path(outputLocation, cdmSource$sourceId)
+unlink(resultsLocation, recursive = TRUE, force = TRUE)
+
 cohortDatabaseSchema <- cdmSource$cohortDatabaseSchemaFinal
 cdmDatabaseSchema <- cdmSource$cdmDatabaseSchemaFinal
 outcomeDatabaseSchema <- cohortDatabaseSchema
