@@ -315,7 +315,8 @@ from #targets_agg as t
 INNER JOIN #cohort_details cd
 on cd.target_cohort_id = t.cohort_definition_id
 and cd.cohort_type = 'Tf'
-GROUP BY t.subject_id
+GROUP BY t.subject_id,
+cd.cohort_definition_id
 
 union
 
@@ -328,7 +329,8 @@ from #outcomes_agg as o
 INNER JOIN #cohort_details cd
 on cd.outcome_cohort_id = o.cohort_definition_id
 and cd.cohort_type = 'Of'
-GROUP BY o.subject_id
+GROUP BY o.subject_id,
+cd.cohort_definition_id
 
 union
 
@@ -341,7 +343,8 @@ from #targets_agg as t
 INNER JOIN #cohort_details cd
 on cd.target_cohort_id = t.cohort_definition_id
 and cd.cohort_type = 'Tl'
-GROUP BY t.subject_id
+GROUP BY t.subject_id,
+cd.cohort_definition_id
 
 union
 
@@ -354,7 +357,8 @@ from #outcomes_agg as o
 INNER JOIN #cohort_details cd
 on cd.outcome_cohort_id = o.cohort_definition_id
 and cd.cohort_type = 'Ol'
-GROUP BY o.subject_id
+GROUP BY o.subject_id,
+cd.cohort_definition_id
 ) temp_ts
 
 union
@@ -400,8 +404,8 @@ union
 
 select
 t.subject_id,
-o.outcome_start_date,
-o.outcome_end_date,
+t.outcome_start_date,
+t.outcome_end_date,
 cd.cohort_definition_id
 from #outcome_overlaps_target t
 INNER JOIN #cohort_details cd
