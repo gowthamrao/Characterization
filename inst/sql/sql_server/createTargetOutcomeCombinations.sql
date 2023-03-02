@@ -229,6 +229,7 @@ o.cohort_end_date >= t.cohort_start_date;
 
 -- Final: select into #agg_cohorts
 
+drop table if exists #agg_cohorts;
 select * into #agg_cohorts
 
 from
