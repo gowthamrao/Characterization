@@ -421,7 +421,7 @@ runCharacterizationAnalyses <- function(
 
         if (!is.null(result$timeRef)) {
           insertAndromedaToDatabase(
-            connection = conn,
+            connection = connectionToSqlLite,
             databaseSchema = "main",
             tableName = "time_ref",
             andromedaObject = result$timeRef,
