@@ -57,7 +57,7 @@ createAggregateCovariateSettings <- function(
     endAnchor = endAnchor,
     errorMessages = errorMessages
   )
-  
+
   # check covariateSettings
   .checkCovariateSettings(
     covariateSettings = covariateSettings,
@@ -268,10 +268,11 @@ createCohortsOfInterest <- function(
       )
   )
 
+  message("Construction T and Outcome cohort combinations.")
   DatabaseConnector::executeSql(
     connection = connection,
     sql = sql,
-    progressBar = FALSE,
+    progressBar = TRUE,
     reportOverallTime = FALSE
   )
 
