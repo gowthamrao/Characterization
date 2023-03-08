@@ -1,11 +1,11 @@
 # Set up
 
 # remotes::install_github("OHDSI/DatabaseConnector")
-# remotes::install_github("OHDSI/FeatureExtraction")
+# remotes::install_github("OHDSI/FeatureExtraction", ref = "cohortCovariates")
 # remotes::install_github('ohdsi/ResultModelManager')
 # remotes::install_github('ohdsi/ShinyAppBuilder')
 
-outputLocation <- file.path("D:", "test")
+outputLocation <- file.path("D:", "testCohortCovariates")
 unlink(x = outputLocation, recursive = TRUE)
 dir.create(outputLocation, recursive = TRUE)
 
@@ -21,10 +21,24 @@ targetCohortDefinitionSet <-
 outcomeCohortDefinitionSet <-
   PhenotypeLibrary::getPlCohortDefinitionSet(cohortIds = 23)
 
+# cohort definition set
+featureCohortDefinitionSet <-
+  PhenotypeLibrary::getPlCohortDefinitionSet(
+    cohortIds =
+      PhenotypeLibrary::getPhenotypeLog() |>
+      dplyr::filter(stringr::str_detect(
+        string = tolower(hashTag), pattern = "symptoms"
+      )) |>
+      dplyr::pull(cohortId) |>
+      unique()
+  )
+
 cohortDefinitionSet <-
   dplyr::bind_rows(
     targetCohortDefinitionSet,
     outcomeCohortDefinitionSet
+    # ,
+    # featureCohortDefinitionSet
   )
 
 database <- "eunomia"
@@ -38,6 +52,8 @@ targetCohortDatabaseSchema <- cdmDatabaseSchema
 targetCohortTable <- cohortTableNames$cohortTable
 outcomeCohortDatabaseSchema <- cdmDatabaseSchema
 outcomeCohortTable <- cohortTableNames$cohortTable
+featureCohortDatabaseSchema <- cohortDatabaseSchema
+featureCohortTable <- cohortTableNames$cohortTable
 
 connectionDetails <- Eunomia::getEunomiaConnectionDetails()
 CohortGenerator::createCohortTables(
@@ -57,8 +73,21 @@ CohortGenerator::generateCohortSet(
 cohortDiagnosticsCovariateSettings <-
   CohortDiagnostics::getDefaultCovariateSettings()
 
+cohortBasedCovariateSettings <-
+  FeatureExtraction::createCohortBasedTemporalCovariateSettings(
+    analysisId = 150,
+    covariateCohortDatabaseSchema = featureCohortDatabaseSchema,
+    covariateCohortTable = featureCohortTable,
+    covariateCohorts = featureCohortDefinitionSet |>
+      dplyr::select(cohortId, cohortName),
+    valueType = "binary",
+    temporalStartDays = cohortDiagnosticsCovariateSettings$temporalStartDays,
+    temporalEndDays = cohortDiagnosticsCovariateSettings$temporalEndDays
+  )
+
 covariateSettings <-
-  list(cohortDiagnosticsCovariateSettings)
+  list(cohortDiagnosticsCovariateSettings,
+       cohortBasedCovariateSettings)
 
 # Setting for characterization package
 aggregateCovariateSettings <-
