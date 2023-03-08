@@ -168,7 +168,7 @@ and o.cohort_definition_id = two.outcome_cohort_id
 where two.subject_id IS NULL;
 
 -- 3) get all the events where target overlaps outcome
-drop table if exists #target_overlaps_outcome;
+drop table if exists #t_overlaps_o;
 select
 t.subject_id,
 t.cohort_start_date,
@@ -177,7 +177,7 @@ o.cohort_start_date as outcome_start_date,
 o.cohort_end_date as outcome_end_date,
 t.cohort_definition_id as target_cohort_id,
 o.cohort_definition_id as outcome_cohort_id
-into #target_overlaps_outcome
+into #t_overlaps_o
 from #targets_agg t inner join #outcomes_agg o
 on t.subject_id = o.subject_id
 where
@@ -188,7 +188,7 @@ and
 t.cohort_end_date >= o.cohort_start_date;
 
 -- 4) get all the events where outcome overlaps target
-drop table if exists #outcome_overlaps_target;
+drop table if exists #o_overlaps_t;
 select
 t.subject_id,
 t.cohort_start_date,
@@ -197,7 +197,7 @@ o.cohort_start_date as outcome_start_date,
 o.cohort_end_date as outcome_end_date,
 t.cohort_definition_id as target_cohort_id,
 o.cohort_definition_id as outcome_cohort_id
-into #outcome_overlaps_target
+into #o_overlaps_t
 from #targets_agg t inner join #outcomes_agg o
 on t.subject_id = o.subject_id
 where
@@ -357,7 +357,7 @@ t.subject_id,
 t.cohort_start_date,
 t.cohort_end_date,
 cd.cohort_definition_id
-from #target_overlaps_outcome t
+from #t_overlaps_o t
 INNER JOIN #cohort_details cd
 on cd.target_cohort_id = t.target_cohort_id
 and cd.outcome_cohort_id = t.outcome_cohort_id
@@ -371,7 +371,7 @@ t.subject_id,
 t.outcome_start_date,
 t.outcome_end_date,
 cd.cohort_definition_id
-from #target_overlaps_outcome t
+from #t_overlaps_o t
 INNER JOIN #cohort_details cd
 on cd.target_cohort_id = t.target_cohort_id
 and cd.outcome_cohort_id = t.outcome_cohort_id
@@ -384,7 +384,7 @@ t.subject_id,
 t.cohort_start_date,
 t.cohort_end_date,
 cd.cohort_definition_id
-from #outcome_overlaps_target t
+from #o_overlaps_t t
 INNER JOIN #cohort_details cd
 on cd.target_cohort_id = t.target_cohort_id
 and cd.outcome_cohort_id = t.outcome_cohort_id
@@ -397,7 +397,7 @@ t.subject_id,
 t.outcome_start_date,
 t.outcome_end_date,
 cd.cohort_definition_id
-from #outcome_overlaps_target t
+from #o_overlaps_t t
 INNER JOIN #cohort_details cd
 on cd.target_cohort_id = t.target_cohort_id
 and cd.outcome_cohort_id = t.outcome_cohort_id

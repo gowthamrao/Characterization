@@ -18,6 +18,11 @@ DROP TABLE #target_nooutcome;
 TRUNCATE TABLE #agg_cohorts;
 DROP TABLE #agg_cohorts;
 
+TRUNCATE TABLE #t_overlaps_o;
+DROP TABLE #t_overlaps_o;
+
+TRUNCATE TABLE #o_overlaps_t;
+DROP TABLE #o_overlaps_t;
 
 
 
